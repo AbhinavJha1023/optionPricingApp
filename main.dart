@@ -50,10 +50,42 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
   double T = 1; // Expiry in years
   double rf = 0.05; // Risk-free rate
   double sigma = 0.2; // Volatility
-  double iterations = 100000; // Number of iterations
+  int iterations = 100000; // Number of iterations
   String callOptionPrice = "";
   String putOptionPrice = "";
   bool isCalculating = false;
+
+  // Controllers for input fields
+  final TextEditingController _s0Controller = TextEditingController();
+  final TextEditingController _eController = TextEditingController();
+  final TextEditingController _tController = TextEditingController();
+  final TextEditingController _rfController = TextEditingController();
+  final TextEditingController _sigmaController = TextEditingController();
+  final TextEditingController _iterationsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers with initial values
+    _s0Controller.text = S0.toStringAsFixed(2);
+    _eController.text = E.toStringAsFixed(2);
+    _tController.text = T.toStringAsFixed(2);
+    _rfController.text = rf.toStringAsFixed(2);
+    _sigmaController.text = sigma.toStringAsFixed(2);
+    _iterationsController.text = iterations.toString();
+  }
+
+  @override
+  void dispose() {
+    // Dispose controllers to free resources
+    _s0Controller.dispose();
+    _eController.dispose();
+    _tController.dispose();
+    _rfController.dispose();
+    _sigmaController.dispose();
+    _iterationsController.dispose();
+    super.dispose();
+  }
 
   // Box-Muller transform to generate normal distribution
   double _generateGaussianRandom() {
@@ -180,6 +212,7 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
     );
   }
 
+  // Enhanced buildSlider to include an input field
   Widget buildSlider({
     required String label,
     required double value,
@@ -187,6 +220,7 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
     required double max,
     required int divisions,
     required Function(double) onChanged,
+    TextEditingController? controller,
     String? suffix,
   }) {
     return Column(
@@ -204,6 +238,30 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
           label: value.toStringAsFixed(2),
           onChanged: onChanged,
         ),
+        SizedBox(height: 8.0),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: "Enter $label",
+            isDense: true,
+          ),
+          onSubmitted: (text) {
+            double? newValue = double.tryParse(text);
+            if (newValue != null) {
+              // Clamp the value within min and max
+              newValue = newValue.clamp(min, max);
+              onChanged(newValue);
+            } else {
+              // If parsing fails, reset the text field to current value
+              setState(() {
+                controller?.text = value.toStringAsFixed(2);
+              });
+            }
+          },
+        ),
+        SizedBox(height: 16.0),
       ],
     );
   }
@@ -223,6 +281,7 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
               child: SingleChildScrollView(
                 child: Column(
                   children: <Widget>[
+                    // Underlying Stock Price Slider and Input
                     buildSlider(
                       label: "Underlying Stock Price (S₀)",
                       value: S0,
@@ -232,9 +291,12 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
                       onChanged: (value) {
                         setState(() {
                           S0 = value;
+                          _s0Controller.text = value.toStringAsFixed(2);
                         });
                       },
+                      controller: _s0Controller,
                     ),
+                    // Strike Price Slider and Input
                     buildSlider(
                       label: "Strike Price (E)",
                       value: E,
@@ -244,9 +306,12 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
                       onChanged: (value) {
                         setState(() {
                           E = value;
+                          _eController.text = value.toStringAsFixed(2);
                         });
                       },
+                      controller: _eController,
                     ),
+                    // Expiry Slider and Input
                     buildSlider(
                       label: "Expiry (T) in years",
                       value: T,
@@ -256,9 +321,12 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
                       onChanged: (value) {
                         setState(() {
                           T = value;
+                          _tController.text = value.toStringAsFixed(2);
                         });
                       },
+                      controller: _tController,
                     ),
+                    // Risk-Free Rate Slider and Input
                     buildSlider(
                       label: "Risk-Free Rate (rₓ)",
                       value: rf,
@@ -268,10 +336,12 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
                       onChanged: (value) {
                         setState(() {
                           rf = value;
+                          _rfController.text = value.toStringAsFixed(2);
                         });
                       },
-                      suffix: '',
+                      controller: _rfController,
                     ),
+                    // Volatility Slider and Input
                     buildSlider(
                       label: "Volatility (σ)",
                       value: sigma,
@@ -281,20 +351,25 @@ class _OptionPricingHomeState extends State<OptionPricingHome> with SingleTicker
                       onChanged: (value) {
                         setState(() {
                           sigma = value;
+                          _sigmaController.text = value.toStringAsFixed(2);
                         });
                       },
+                      controller: _sigmaController,
                     ),
+                    // Iterations Slider and Input
                     buildSlider(
                       label: "Iterations",
-                      value: iterations,
+                      value: iterations.toDouble(),
                       min: 10000,
                       max: 1000000,
                       divisions: 100,
                       onChanged: (value) {
                         setState(() {
-                          iterations = value;
+                          iterations = value.round();
+                          _iterationsController.text = iterations.toString();
                         });
                       },
+                      controller: _iterationsController,
                       suffix: '',
                     ),
                   ],
